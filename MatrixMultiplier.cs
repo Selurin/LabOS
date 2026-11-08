@@ -20,6 +20,7 @@ public class MatrixMultiplier
         _matrixA = new long[n, m];
         _matrixB = new long[m, k];
         _matrixC = new long[n, k];
+
         _completedRows = 0;
         _isFinished = false;
     }
@@ -33,14 +34,14 @@ public class MatrixMultiplier
         for (int i = 0; i < _n; i++)
             for (int j = 0; j < _m; j++)
                 _matrixA[i, j] = rand.Next(0, 10);
-        
+
         // Заполняем матрицу B числами от 0 до 9
         for (int i = 0; i < _m; i++)
             for (int j = 0; j < _k; j++)
                 _matrixB[i, j] = rand.Next(0, 10);
     }
 
-    // 2. Прогрев JIT-компилятора (необходим для C#)
+    // 2. Прогрев JIT-компилятора
     public void Warmup()
     {
         long[,] warmupA = new long[10, 10];
@@ -82,10 +83,10 @@ public class MatrixMultiplier
 
         _isFinished = true;
         progressThread.Join();
-        Console.WriteLine("\rПрогресс: 100%");
+        Console.WriteLine("\rПрогресс: 100%              "); // Добавлены пробелы для очистки строки
     }
 
-    // Рабочий метод потока: умножение с оптимальным порядком циклов для кэша
+    // Рабочий поток с оптимизацией под кэш (порядок i -> t -> j)
     private void Worker(int startRow, int endRow)
     {
         for (int i = startRow; i < endRow; i++)
@@ -98,13 +99,11 @@ public class MatrixMultiplier
                     _matrixC[i, j] += a * _matrixB[t, j];
                 }
             }
-
-            // Атомарное обновление счётчика выполненных строк
             Interlocked.Increment(ref _completedRows);
         }
     }
 
-    // Метод для вывода прогресса (с защитой от слишком частой печати)
+    // Поток для вывода прогресса
     private void ProgressReporter()
     {
         int lastPercent = -1;
@@ -120,11 +119,9 @@ public class MatrixMultiplier
         }
     }
 
-    // 4. Подсчёт контрольной суммы и вывод результатов
-    public void PrintResults(double elapsedMilliseconds)
+    // Вывод только контрольной суммы (без времени, так как оно считается в Program)
+    public void PrintChecksum()
     {
-        Console.WriteLine($"\nВремя умножения: {elapsedMilliseconds:F2} мс");
-
         long checksum = 0;
         for (int i = 0; i < _n; i++)
             for (int j = 0; j < _k; j++)
@@ -132,7 +129,6 @@ public class MatrixMultiplier
 
         Console.WriteLine($"Контрольная сумма: {checksum}");
 
-        // Вывод матрицы только для маленьких размеров
         if (_n <= 10 && _k <= 10)
         {
             Console.WriteLine("\nМатрица результата C:");

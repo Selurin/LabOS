@@ -1,4 +1,6 @@
-﻿namespace LabOS
+﻿using System.Diagnostics;
+
+namespace LabOS
 {
     internal class Program
     {
@@ -45,37 +47,59 @@
 
                     try
                     {
-                        Console.WriteLine($"\nЗапуск: A[{n}x{m}] * B[{m}x{k}] в {t} потоков...");
+                        Console.WriteLine($"\nЗапуск серии из 5 замеров: A[{n}x{m}] * B[{m}x{k}] в {t} потоков...");
 
+                        // Создаем экземпляр класса-умножителя
                         MatrixMultiplier multiplier = new MatrixMultiplier(n, m, k, t);
 
-                        Console.WriteLine("Генерация данных и прогрев...");
+                        Console.WriteLine("Генерация данных и прогрев JIT...");
                         multiplier.GenerateData();
-                        multiplier.Warmup(); // Прогрев JIT
+                        multiplier.Warmup();
 
-                        Console.WriteLine("Начало умножения...");
-                        DateTime startTime = DateTime.UtcNow;
+                        // Массив для хранения 5 результатов замеров
+                        double[] results = new double[5];
 
-                        multiplier.RunMultiplication();
+                        for (int i = 0; i < 5; i++)
+                        {
+                            Console.Write($"Выполняется замер #{i + 1}/5... ");
 
-                        DateTime endTime = DateTime.UtcNow;
-                        double elapsedMs = (endTime - startTime).TotalMilliseconds;
+                            Stopwatch sw = Stopwatch.StartNew();
 
-                        multiplier.PrintResults(elapsedMs);
+                            multiplier.RunMultiplication();
+
+                            sw.Stop();
+                            results[i] = sw.Elapsed.TotalMilliseconds;
+                            Console.WriteLine($"{results[i]:F2} мс");
+                        }
+
+                        // Обработка результатов: сортируем, отбрасываем min/max и считаем среднее
+                        Array.Sort(results);
+                        double sum = 0;
+                        for (int i = 1; i < 4; i++) // Берем индексы 1, 2, 3 (пропускаем 0 и 4)
+                        {
+                            sum += results[i];
+                        }
+                        double averageTime = sum / 3;
+
+                        Console.WriteLine("\n---------------------------------------------------");
+                        Console.WriteLine($"Результаты замеров (мс): [{string.Join(", ", results)}]");
+                        Console.WriteLine($"Отброшены: мин ({results[0]:F2}) и макс ({results[4]:F2})");
+                        Console.WriteLine($"Среднее время (по 3 центральным замерам): {averageTime:F2} мс");
+
+                        // Вывод контрольной суммы (берем из последнего успешного выполнения)
+                        multiplier.PrintChecksum();
+                        Console.WriteLine("---------------------------------------------------\n");
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Критическая ошибка: {ex.Message}");
                     }
-                    Console.WriteLine("\n---------------------------------------------------\n");
                 }
                 else
                 {
-                    Console.WriteLine("Ошибка: введены некорректные данные. " +
-                        "Используйте только целые положительные числа.\n");
+                    Console.WriteLine("Ошибка: введены некорректные данные. Используйте только целые положительные числа.\n");
                 }
             }
-
         }
     }
 }
