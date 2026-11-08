@@ -56,6 +56,14 @@ public class MatrixMultiplier
     // 3. Основной метод запуска умножения с замером времени
     public void RunMultiplication()
     {
+        // Сбрасываем состояние для корректной работы потока прогресса
+        _isFinished = false;
+        _completedRows = 0;
+
+        // Очищаем матрицу C, чтобы результаты предыдущих замеров не накапливались
+        Array.Clear(_matrixC, 0, _matrixC.Length);
+
+        Console.WriteLine();
         Thread[] threads = new Thread[_threadCount];
         int baseRows = _n / _threadCount;
         int remainder = _n % _threadCount;
