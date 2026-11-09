@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../LabOSTests/LabOSTests.csproj" Id="daeed23f-49f1-4fc6-8e13-bb221a7e4bce" />
   <Project Path="LabOS.csproj" />
 </Solution>
